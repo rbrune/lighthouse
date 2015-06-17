@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<script src="processing.js"></script>
+</head>
+<body>
+<script type="application/processing" target="sketch">
+
+
+canvas_x = 700;
+canvas_y = 500;
+
+
+
+
+
+
+class Lighthouse {
+	PVector p;
+	double yaw;
+	double pitch;
+	double r_min;
+	double r_max;
+	double fov = 120.0;
+	
+	Lighthouse(nx, ny, nz, nyaw, npitch, nrmin, nrmax) {
+		p = new PVector(nx, ny, nz);
+		yaw = nyaw;
+		pitch = npitch
+		r_min = nrmin;
+		r_max = nrmax;
+	}
+		
+	PVector find_intersect_point(dh, dpitch, dyaw) {
+		np = new PVector(p.x, p.y, -1.0);
+		
+		double h = p.z - dh;
+		
+		double alpha = radians(pitch + dpitch);
+		double beta = radians(yaw);
+		double gamma = radians(dyaw);
+		
+		double dO = h / cos(alpha);
+		double dF = dO / cos(gamma);
+		
+		//if (dF > dist) return np;
+		
+		double lO = h * tan(alpha);
+		double lOx = lO * cos(beta);
+		double lOy = lO * sin(beta);
+		
+		double lF = dO * tan(gamma);
+		double lFx = lF * sin(beta);
+		double lFy = lF * cos(beta);
+		
+		np.x = lOx + lFx;
+		np.y = lOy - lFy;
+		np.z = dF;
+		
+		return np;
+	}	
+		
+	void draw_top_d(h, max_d) {
+		
+		beginShape();
+		
+		for (double dpitch = -fov/2.0; dpitch <= fov/2.0; dpitch = dpitch + 0.1) {
+			int found = 0;
+			float nx = 0.0;
+			float ny = 0.0;
+			for (double dyaw = 0.0; dyaw <= fov/2.0; dyaw = dyaw + 0.3) {
+				np = find_intersect_point(h, dpitch, dyaw);
+				if ((np.z >= 0.0) && (np.z <= max_d)) {
+					nx = np.x;
+					ny = np.y;
+					found = 1;
+				}
+			}
+			if (found != 0) {
+				vertex(p.x + nx, p.y + ny);
+			}
+			
+		}
+		for (double dpitch = fov/2.0; dpitch >= -fov/2.0; dpitch = dpitch - 0.1) {
+			int found = 0;
+			float nx = 0.0;
+			float ny = 0.0;
+			for (double dyaw = 0.0; dyaw >= -fov/2.0; dyaw = dyaw - 0.3) {
+				np = find_intersect_point(h, dpitch, dyaw);
+				if ((np.z >= 0.0) && (np.z <= max_d)) {
+					nx = np.x;
+					ny = np.y;
+					found = 1;
+				}
+			}
+			if (found != 0) {
+				vertex(p.x + nx, p.y + ny);			
+			}
+			
+		}
+
+		endShape(CLOSE);
+		
+	}
+	
+	void draw_top(h) {
+		
+		noStroke();
+		fill(255, 0, 0, 128);
+		draw_top_d(h, r_min);
+		fill(32, 128, 32, 128);	
+		draw_top_d(h, r_max);
+		
+		fill(0);
+		ellipseMode(CENTER);
+		ellipse(p.x, p.y, 0.5, 0.5)
+		
+	}
+	
+}
+
+
+
+
+void setup() {
+	size(canvas_x, canvas_y);
+	//frameRate(2);
+	
+	noLoop();
+	
+	l1 = new Lighthouse(  0.0,   0.0,  6.5,  45.0, 45.0, 1.5, 15.0);
+	l2 = new Lighthouse( 14.0,  10.0,  6.5, 225.0, 45.0, 1.5, 15.0);
+	
+	slice1 = 3.0;
+	slice2 = 5.5;
+}
+
+
+void draw() {
+	//background(200);
+	fill(216);
+	noStroke();
+	rect(0,0,canvas_x,canvas_y);
+
+
+	noStroke();
+	//strokeWeight(0.2);
+
+	
+	pushMatrix();
+		translate(canvas_x/2.0, 1*canvas_y/4.0);
+		scale(10);
+		translate(-(l2.p.x+l1.p.x)/2.0, -(l2.p.y+l1.p.y)/2.0);
+		
+		l1.draw_top(slice1);
+		l2.draw_top(slice1);
+		
+		noStroke();
+		fill(96, 128);
+		rect(l1.p.x, l1.p.y, l2.p.x-l1.p.x, l2.p.y-l1.p.y);
+		
+		fill(32);
+		textSize(2);
+		text(nf(slice1, 1, 1) + ' ft above floor', l2.p.x + 10.0, l2.p.y);
+	popMatrix();
+
+
+	pushMatrix();
+		translate(canvas_x/2.0, 3*canvas_y/4.0);
+		scale(10);
+		translate(-(l2.p.x+l1.p.x)/2.0, -(l2.p.y+l1.p.y)/2.0);
+		
+		l1.draw_top(slice2);
+		l2.draw_top(slice2);
+		
+		noStroke();
+		fill(96, 128);
+		rect(l1.p.x, l1.p.y, l2.p.x-l1.p.x, l2.p.y-l1.p.y);
+		
+		fill(32);
+		textSize(2);
+		text(nf(slice2, 1, 1) + ' ft above floor', l2.p.x + 10.0, l2.p.y);
+	popMatrix();
+	
+	
+	text('Rafael Brune (mail@rbrune.de)', 10.0, canvas_y - 10);
+	
+	textAlign(LEFT);
+	text('Room ' + nf(l2.p.x, 1, 1) + ' ft x ' + nf(l2.p.y, 1, 1) + ' ft', 10.0, 100);
+	
+	text('Lighthouse 1', 10.0, 150);
+	text(nf(l1.p.z, 1, 1) + ' ft above floor', 40.0, 165);
+	text(nf(l1.yaw, 1, 1) + ' degree yaw', 40.0, 180);
+	text(nf(l1.pitch, 1, 1) + ' degree pitch', 40.0, 195);
+
+	text('Lighthouse 2', 10.0, 245);
+	text(nf(l2.p.z, 1, 1) + ' ft above floor', 40.0, 260);
+	text(nf(l2.yaw, 1, 1) + ' degree yaw', 40.0, 275);
+	text(nf(l2.pitch, 1, 1) + ' degree pitch', 40.0, 290);
+		
+	text('Lighthouse range ' + nf(l1.r_min, 1, 1) + ' - ' + nf(l1.r_max, 1, 1) + ' ft', 10.0, 340);
+	
+	textSize(20);
+	textAlign(CENTER);
+	text('Lighthouse tracking volume visualization', canvas_x/2.0, 24);
+
+}
+
+void setParameters(t_x, t_y, t_h1, t_h2, t_yaw1, t_yaw2, t_pitch1, t_pitch2, t_rmin, t_rmax, t_slice1, t_slice2) {
+	l1.p.x = 0.0;
+	l1.p.y = 0.0;
+	l1.p.z = float(t_h1);
+	l1.yaw = float(t_yaw1);
+	l1.pitch = float(t_pitch1);
+	l1.r_min = float(t_rmin);
+	l1.r_max = float(t_rmax);
+
+	l2.p.x = float(t_x);
+	l2.p.y = float(t_y);
+	l2.p.z = float(t_h2);
+	l2.yaw = float(t_yaw2);
+	l2.pitch = float(t_pitch2);
+	l2.r_min = float(t_rmin);
+	l2.r_max = float(t_rmax);
+	
+	slice1 = float(t_slice1);
+	slice2 = float(t_slice2);
+	
+	redraw();
+}
+
+</script>
+
+<canvas id="sketch"></canvas></p>
+<div style="height:0px;widht:0px;overflow:hidden;"></div>
+
+Room:<br>
+<input type="textfield" value="14.0" id="t_x" size="5" style="text-align: right"/>ft x <input type="textfield" value="10.0" id="t_y" size="5" style="text-align: right"/>ft <br>
+
+
+<br>Lighthouse 1:<br>
+<input type="textfield" value="6.5" id="t_h1" size="5" style="text-align: right"/>ft above floor<br>
+<input type="textfield" value="45.0" id="t_yaw1" size="5" style="text-align: right"/>degree yaw<br>
+<input type="textfield" value="45.0" id="t_pitch1" size="5" style="text-align: right"/>degree pitch<br>
+
+<br>Lighthouse 2:<br>
+<input type="textfield" value="6.5" id="t_h2" size="5" style="text-align: right"/>ft above floor<br>
+<input type="textfield" value="225.0" id="t_yaw2" size="5" style="text-align: right"/>degree yaw<br>
+<input type="textfield" value="45.0" id="t_pitch2" size="5" style="text-align: right"/>degree pitch<br>
+
+<br>Lighthouse limits:<br>
+<input type="textfield" value="1.5" id="t_rmin" size="5" style="text-align: right"/>ft -
+<input type="textfield" value="15.0" id="t_rmax" size="5" style="text-align: right"/>ft optimal range<br>
+
+<br>Slices to display:<br>
+<input type="textfield" value="3.0" id="t_slice1" size="5" style="text-align: right"/>ft above floor<br>
+<input type="textfield" value="5.5" id="t_slice2" size="5" style="text-align: right"/>ft above floor
+
+<br>
+<button onClick="Processing.getInstanceById('sketch').setParameters(
+document.getElementById('t_x').value,
+document.getElementById('t_y').value,
+document.getElementById('t_h1').value,
+document.getElementById('t_h2').value,
+document.getElementById('t_yaw1').value,
+document.getElementById('t_yaw2').value,
+document.getElementById('t_pitch1').value,
+document.getElementById('t_pitch2').value,
+document.getElementById('t_rmin').value,
+document.getElementById('t_rmax').value,
+document.getElementById('t_slice1').value,
+document.getElementById('t_slice2').value
+);">set parameters</button>
+
+<br>
+<br>
+<br>
+
+(C) Rafael Brune | http://github.com/rbrune
+
+</body>
+</html>
