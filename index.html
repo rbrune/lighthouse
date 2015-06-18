@@ -131,6 +131,9 @@ void setup() {
 	l1 = new Lighthouse(  0.0,   0.0,  6.5,  45.0, 45.0, 1.5, 15.0);
 	l2 = new Lighthouse( 12.0,   9.0,  6.5, 225.0, 45.0, 1.5, 15.0);
 	
+	room_x = 12.0;
+	room_y = 9.0;
+	
 	slice1 = 3.0;
 	slice2 = 5.5;
 }
@@ -157,7 +160,7 @@ void draw() {
 		
 		noStroke();
 		fill(96, 128);
-		rect(l1.p.x, l1.p.y, l2.p.x-l1.p.x, l2.p.y-l1.p.y);
+		rect(0.0, 0.0, room_x, room_y);
 		
 		fill(32);
 		textSize(2);
@@ -175,7 +178,7 @@ void draw() {
 		
 		noStroke();
 		fill(96, 128);
-		rect(l1.p.x, l1.p.y, l2.p.x-l1.p.x, l2.p.y-l1.p.y);
+		rect(0.0, 0.0, room_x, room_y);
 		
 		fill(32);
 		textSize(2);
@@ -206,17 +209,13 @@ void draw() {
 
 }
 
-void setParameters(t_x, t_y, t_h1, t_h2, t_yaw1, t_yaw2, t_pitch1, t_pitch2, t_rmin, t_rmax, t_slice1, t_slice2) {
-	l1.p.x = 0.0;
-	l1.p.y = 0.0;
+void setParameters(t_x, t_y, t_h1, t_h2, t_yaw1, t_yaw2, t_pitch1, t_pitch2, t_rmin, t_rmax, t_slice1, t_slice2, t_place) {
 	l1.p.z = float(t_h1);
 	l1.yaw = float(t_yaw1);
 	l1.pitch = float(t_pitch1);
 	l1.r_min = float(t_rmin);
 	l1.r_max = float(t_rmax);
 
-	l2.p.x = float(t_x);
-	l2.p.y = float(t_y);
 	l2.p.z = float(t_h2);
 	l2.yaw = float(t_yaw2);
 	l2.pitch = float(t_pitch2);
@@ -225,6 +224,25 @@ void setParameters(t_x, t_y, t_h1, t_h2, t_yaw1, t_yaw2, t_pitch1, t_pitch2, t_r
 	
 	slice1 = float(t_slice1);
 	slice2 = float(t_slice2);
+
+	if (t_place == 'corner') {
+		l1.p.x = 0.0;
+		l1.p.y = 0.0;
+		l2.p.x = float(t_x);
+		l2.p.y = float(t_y);
+		room_x = float(t_x);
+		room_y = float(t_y);
+	}
+	if (t_place == 'wall') {
+		l1.p.x = 0.0;
+		l1.p.y = float(t_y)/2.0;
+		l2.p.x = float(t_x);
+		l2.p.y = float(t_y)/2.0;
+		room_x = float(t_x);
+		room_y = float(t_y);
+	}
+
+
 	
 	redraw();
 }
@@ -237,6 +255,11 @@ void setParameters(t_x, t_y, t_h1, t_h2, t_yaw1, t_yaw2, t_pitch1, t_pitch2, t_r
 Room:<br>
 <input type="textfield" value="12.0" id="t_x" size="5" style="text-align: right"/>ft x <input type="textfield" value="9.0" id="t_y" size="5" style="text-align: right"/>ft <br>
 
+<br>Lighthouse Placement<br>
+<select id ='t_place'>
+<option value='corner'>Opposite Corners</option>
+<option value='wall'>Opposite Walls</option>
+</select><br>
 
 <br>Lighthouse 1:<br>
 <input type="textfield" value="6.5" id="t_h1" size="5" style="text-align: right"/>ft above floor<br>
@@ -269,7 +292,8 @@ document.getElementById('t_pitch2').value,
 document.getElementById('t_rmin').value,
 document.getElementById('t_rmax').value,
 document.getElementById('t_slice1').value,
-document.getElementById('t_slice2').value
+document.getElementById('t_slice2').value,
+document.getElementById('t_place').value
 );">set parameters</button>
 
 <br>
